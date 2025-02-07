@@ -1,0 +1,7 @@
+python-telegram-bot
+requests
+yt-dlp
+librosa
+soundfile
+numpy
+matplotlib
