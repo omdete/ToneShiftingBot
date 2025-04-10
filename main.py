@@ -1,5 +1,6 @@
 from getpass import getpass
 
+import requests
 from telegram import Update
 from telegram.ext import CommandHandler, MessageHandler, CallbackContext, ApplicationBuilder, ContextTypes
 import telegram.ext.filters as filters
@@ -21,7 +22,14 @@ def main():
     The final audio is then sent back to the user.
 
     """
-    app = ApplicationBuilder().token(load_password()).build()
+    token = load_password()
+    query = requests.get(f"https://api.telegram.org/bot{token}/getMe")
+    assert query.status_code == 200, "Querying Telegram Bot API failed."
+    if query.json().get("ok"):
+        print("Telegram bot is already running!")
+        return
+
+    app = ApplicationBuilder().token(token).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, download_url))
@@ -50,7 +58,7 @@ def load_password(private_key_path: str = "~/.ssh/id_rsa",
     private_key_path = os.path.expanduser(private_key_path)
 
     if not os.path.exists(token_path) or not os.path.exists(private_key_path):
-        return getpass("Please enter the login token: ")
+        return os.getenv("TOKEN") or getpass("Please enter the login token: ")
 
     try:
         result = subprocess.run(
